@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title id="page-title">视频播放器工具</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#007bff">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body class="dark-theme">
+    <nav id="sidebar" class="collapsed dark-theme">
+        <button id="collapse-toggle">☰</button>
+        <div id="sidebar-content">
+            <a href="index.html"><span class="icon">🏠</span>视频学习</a>
+            <a href=""><span class="icon">📈</span>Page2</a>
+            <a href=""><span class="icon">😉</span>Page3</a>
+        </div>
+        <div id="star-container"></div>
+        <span id="cumulative-time">累计时长: 0:00:00</span>
+    </nav>
+    <div id="input-button-container">
+	<label for="fileInput">导入视频和项目文件</label>
+    	<input type="file" id="fileInput" multiple accept=".zip,.srt,.json,video/mp4">
+
+        <button id="clear">清空选择</button>
+        <span style="display:inline-block; width: 10px;"></span>
+        <button id="open">打开</button>
+        <span style="display:inline-block; width: 10px;"></span>
+        <button id="rearrange">字幕重排</button>
+        <span style="display:inline-block; width: 10px;"></span>
+    	<button id="save-project">保存项目</button>
+        <span style="display:inline-block; width: 10px;"></span>
+        <button id="toggle-occlusion">开字幕遮蔽</button>
+        <span style="display:inline-block; width: 10px;"></span>
+
+        <button id="font-decrease">-</button>
+        <span id="font-size-display">字体大小</span>
+        <button id="font-increase">+</button>
+        <span style="display:inline-block; width: 10px;"></span>
+
+        <button id="global-offset-decrease">-</button>
+        <span id="time-offset-display">整体字幕时间偏移</span>
+        <button id="global-offset-increase">+</button>
+        <span style="display:inline-block; width: 10px;"></span>
+
+        <span style="display:inline-block; width: 10px;"></span>
+        <span id="font-size-display">时间跳跃跨度</span>
+        <select id="arrow-step">
+            <option value="1">1秒</option>
+            <option value="2">2秒</option>
+            <option value="3">3秒</option>
+            <option value="4">4秒</option>
+            <option value="5" selected>5秒</option>
+        </select>
+
+        <span id="font-size-display">复读次数</span>
+        <select id="repeat-select">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+        <span style="display:inline-block; width: 10px;"></span>
+
+        <span id="font-size-display">句间停顿</span>
+        <button id="decrease-pause">-</button>
+        <span id="pause-time">0</span><span id="font-size-display">秒</span>
+        <button id="increase-pause">+</button>
+	<span style="display:inline-block; width: 10px;"></span>
+
+	<span id="playback-speed-label">播放速度</span>
+	<button id="playback-speed-decrease">-</button>
+	<span id="playback-speed-display">1.0x</span>
+	<button id="playback-speed-increase">+</button>
+        <span style="display:inline-block; width: 10px;"></span>
+        <!--
+        <label><input type="radio" name="language" value="zh" checked> 中文</label>
+        <label><input type="radio" name="language" value="en"> English</label>
+        -->
+        <label><input type="radio" name="theme" value="light"> Light</label>
+        <label><input type="radio" name="theme" value="dark" checked> Dark</label>
+
+    </div>
+    <div id="container" style="display: none;">
+        <div id="player">
+            <div id="video-container">
+                <video id="video"></video>   
+                <div id="video-occlusion"></div>
+            </div>
+            <div id="subtitles"></div>
+        </div>
+        <div id="favorites-and-browser">
+            <div id="favorites-container">
+                <button id="play-all-favorites">播放全部收藏</button>
+                <div id="favorites"></div>
+            </div>
+            <div id="url-browser-container">
+                <div id="url-buttons-container">
+                    <button id="kimi-btn">Kimi</button>
+                    <button id="baidu-btn">百度翻译</button>
+                    <button id="test-btn">找台词</button>
+                    <span id="usage-time">使用时长: 0:00:00</span>
+                </div>
+                <p id="iframe-error">网站屏蔽窗口访问</p>
+                <button id="open-in-new-tab" style="display: none;">在新窗口打开</button>
+                <iframe id="browser-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+        </div>
+    </div>
+    <footer class="dark-theme">
+        <h3 id="footer-heading">使用方法</h3>
+        <p id="footer-import">导入：点击页面顶部的文件输入框，选择视频文件（支持常见格式如MP4）、SRT字幕文件（.srt）和可选的收藏列表（.json）。点击“打开”按钮加载文件。</p>
+        <p id="footer-export">导出：支持两种导出方式。1) 重排字幕：点击“导出重排字幕”生成调整后的SRT文件，包含按句子重新组织的字幕和时间偏移，用于字幕编辑或播放。2) 收藏列表：点击“导出收藏列表”保存收藏的字幕及其调整后的时间，用于学习或复习的重点句。</p>
+        <ul id="footer-usage"></ul>
+    </footer>
+    <script src="libs/script.js" defer></script>
+	<!-- 富文本编辑模态框 -->
+<div id="editor-modal" class="modal">
+	<div class="modal-content">
+        	<h3>编辑字幕笔记</h3>
+        
+        <div id="editor-toolbar">
+		<div class="toolbar-row">
+			<button onclick="formatText('bold')"><b>B</b></button>
+			<button onclick="formatText('italic')"><i>I</i></button>
+            		<button onclick="formatText('strikethrough')"><s>S</s></button>
+ 		</div>
+		<div class="toolbar-row">
+			<button id="clear-format-btn" title="清除选中文字样式">清除</button>
+			<button id="preset-new-word" title="生词：红底白字">生词</button>
+			<button id="preset-linking" title="连读: 黄底红字下划线">连读</button>
+			<button id="preset-weak" title="非重读音弱读: 蓝底点划线">不发音</button>
+			<button id="preset-schwa" title="schwa: 绿底黑字双下划线">schwa</button>
+			<button id="preset-phrase" title="短语：文字外框">短语</button>
+		</div>
+        	<div id="rich-editor" contenteditable="true"></div>
+        	<div class="modal-actions">
+            		<button id="cancel-edit">取消</button>
+            		<button id="save-edit">保存</button>  
+		</div>
+	</div>
+</div>
+
+<datalist id="tag-options">
+  <option value="语速太快">
+  <option value="句子太长">
+  <option value="句意不理解">
+  <option value="语法不理解">
+  <option value="嘴巴跟不上">
+  <option value="连读听不清">
+  <option value="已解决">
+</datalist>
+<script src="libs/jszip.min.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW 注册成功:', reg.scope))
+      .catch(err => console.error('SW 注册失败:', err));
+  }
+</script>
+</body>
+</html>
+
+{
+  "name": "视频播放器工具",
+  "short_name": "视频学习",
+  "description": "支持 SRT 字幕、复读、收藏、重排与富文本笔记的视频学习工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#007bff",
+  "orientation": "any",
+  "scope": ".",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%23007bff'/%3E%3Ctext x='96' y='120' font-size='100' text-anchor='middle' fill='white'%3E▶%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23007bff'/%3E%3Ctext x='256' y='320' font-size='280' text-anchor='middle' fill='white'%3E▶%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
